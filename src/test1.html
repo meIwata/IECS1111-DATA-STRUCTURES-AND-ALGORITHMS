@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>🍅 可愛番茄鐘 🍅</title>
+  <link rel="stylesheet" href="css/style1.css">
+</head>
+<body>
+<div class="container">
+  <h1 class="title">🍅 可愛番茄鐘 🍅</h1>
+  <div class="timer-face">
+    <div class="tomato">🍅</div>
+    <div class="time-display" id="timeDisplay">25:00</div>
+    <div class="cute-text" id="statusText">準備開始專注時間！ ✨</div>
+  </div>
+  <div class="controls">
+    <div class="input-group">
+      <label for="minutes">⏰ 分鐘數：</label>
+      <input type="number" id="minutes" value="25" min="1" max="99">
+    </div>
+    <div class="button-group">
+      <button id="startBtn" class="btn start">🚀 開始</button>
+      <button id="pauseBtn" class="btn pause">⏸️ 暫停</button>
+      <button id="resetBtn" class="btn reset">🔄 重設</button>
+    </div>
+  </div>
+</div>
+<script src="js/app1.js"></script>
+</body>
+</html>
