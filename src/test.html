@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>動態圖片瀏覽器</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+    <div class="image-area" id="image-area">
+        <img id="preview" src="" alt="圖片預覽" style="display:none;"/>
+    </div>
+    <div class="button-bar">
+        <button id="prev-btn">上一張</button>
+        <button id="choose-btn">選取圖片所在目錄</button>
+        <button id="next-btn">下一張</button>
+        <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none"/>
+    </div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
