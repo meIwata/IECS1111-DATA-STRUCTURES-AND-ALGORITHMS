@@ -11,8 +11,11 @@ public class SparseMatrixGUI extends JFrame {
     private JTextField sizeField;
     private JTextField densityField;
     private JButton generateButton;
+    private JButton showSparseButton;
     private JTable matrixTable;
     private JScrollPane scrollPane;
+    private JTextArea sparseTextArea;
+    private int[][] lastMatrix;
 
     public SparseMatrixGUI() {
         setTitle("稀疏矩陣產生器");
@@ -28,16 +31,28 @@ public class SparseMatrixGUI extends JFrame {
         inputPanel.add(densityField);
         generateButton = new JButton("生成矩陣");
         inputPanel.add(generateButton);
+        showSparseButton = new JButton("顯示稀疏表示");
+        inputPanel.add(showSparseButton);
         add(inputPanel, BorderLayout.NORTH);
 
         matrixTable = new JTable();
         scrollPane = new JScrollPane(matrixTable);
         add(scrollPane, BorderLayout.CENTER);
 
+        sparseTextArea = new JTextArea(8, 40);
+        sparseTextArea.setEditable(false);
+        add(new JScrollPane(sparseTextArea), BorderLayout.SOUTH);
+
         generateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 generateMatrix();
+            }
+        });
+        showSparseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showSparseMatrix();
             }
         });
 
@@ -58,7 +73,9 @@ public class SparseMatrixGUI extends JFrame {
             return;
         }
         int[][] matrix = createSparseMatrix(n, density);
+        lastMatrix = matrix;
         showMatrix(matrix);
+        sparseTextArea.setText("");
     }
 
     private int[][] createSparseMatrix(int n, double density) {
@@ -92,8 +109,25 @@ public class SparseMatrixGUI extends JFrame {
         matrixTable.setModel(model);
     }
 
+    private void showSparseMatrix() {
+        if (lastMatrix == null) {
+            sparseTextArea.setText("請先生成矩陣");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("稀疏矩陣(row, col, value):\n");
+        int n = lastMatrix.length;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (lastMatrix[i][j] != 0) {
+                    sb.append("(").append(i).append(", ").append(j).append(", ").append(lastMatrix[i][j]).append(")\n");
+                }
+            }
+        }
+        sparseTextArea.setText(sb.toString());
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(SparseMatrixGUI::new);
     }
 }
-
