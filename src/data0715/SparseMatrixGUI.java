@@ -19,26 +19,59 @@ public class SparseMatrixGUI extends JFrame {
     private JTable matrixTable2;
     private JTextArea sparseTextArea2;
     private int[][] lastMatrix2;
+    private JLabel messageLabel;
+    private JButton addButton;
+    private JButton subButton;
+    private JTable resultTable;
+    private JTextArea resultSparseTextArea;
+    private JButton transposeButton;
+    private JTable transposeTable;
+    private JTextArea transposeSparseTextArea;
+    private JButton transposeButton1;
+    private JTable transposeTable1;
+    private JTextArea transposeSparseTextArea1;
+    private JLabel timeLabel1;
+    private JLabel timeLabel2;
 
     public SparseMatrixGUI() {
         setTitle("稀疏矩陣產生器");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        // --- 上方訊息與輸入區 ---
+        messageLabel = new JLabel("");
+        messageLabel.setForeground(Color.RED);
         JPanel inputPanel = new JPanel();
-        inputPanel.add(new JLabel("矩陣大小 n:"));
+        inputPanel.setLayout(new GridLayout(2, 1));
+        JPanel row1 = new JPanel();
+        row1.add(new JLabel("矩陣大小 n:"));
         sizeField = new JTextField("5", 5);
-        inputPanel.add(sizeField);
-        inputPanel.add(new JLabel("密集度 (0~1):"));
+        row1.add(sizeField);
+        row1.add(new JLabel("密集度 (0~1):"));
         densityField = new JTextField("0.2", 5);
-        inputPanel.add(densityField);
+        row1.add(densityField);
+        inputPanel.add(row1);
+        JPanel row2 = new JPanel();
         generateButton = new JButton("產生矩陣1");
-        inputPanel.add(generateButton);
+        row2.add(generateButton);
         generateButton2 = new JButton("產生矩陣2");
-        inputPanel.add(generateButton2);
-        add(inputPanel, BorderLayout.NORTH);
+        row2.add(generateButton2);
+        addButton = new JButton("矩陣相加");
+        row2.add(addButton);
+        subButton = new JButton("矩陣相減");
+        row2.add(subButton);
+        transposeButton = new JButton("第二個稀疏矩陣轉置");
+        row2.add(transposeButton);
+        transposeButton1 = new JButton("矩陣1原始轉置");
+        row2.add(transposeButton1);
+        inputPanel.add(row2);
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(messageLabel, BorderLayout.NORTH);
+        topPanel.add(inputPanel, BorderLayout.SOUTH);
+        add(topPanel, BorderLayout.NORTH);
 
-        JPanel gridPanel = new JPanel(new GridLayout(2, 2));
+        // --- 主體區域 ---
+        JPanel gridPanel = new JPanel(new GridLayout(2, 4));
         matrixTable = new JTable();
         gridPanel.add(new JScrollPane(matrixTable));
         sparseTextArea = new JTextArea(8, 30);
@@ -49,8 +82,32 @@ public class SparseMatrixGUI extends JFrame {
         sparseTextArea2 = new JTextArea(8, 30);
         sparseTextArea2.setEditable(false);
         gridPanel.add(new JScrollPane(sparseTextArea2));
+        resultTable = new JTable();
+        gridPanel.add(new JScrollPane(resultTable));
+        resultSparseTextArea = new JTextArea(8, 30);
+        resultSparseTextArea.setEditable(false);
+        gridPanel.add(new JScrollPane(resultSparseTextArea));
+        transposeTable = new JTable();
+        gridPanel.add(new JScrollPane(transposeTable));
+        transposeSparseTextArea = new JTextArea(8, 30);
+        transposeSparseTextArea.setEditable(false);
+        gridPanel.add(new JScrollPane(transposeSparseTextArea));
+        transposeTable1 = new JTable();
+        gridPanel.add(new JScrollPane(transposeTable1));
+        transposeSparseTextArea1 = new JTextArea(8, 30);
+        transposeSparseTextArea1.setEditable(false);
+        gridPanel.add(new JScrollPane(transposeSparseTextArea1));
         add(gridPanel, BorderLayout.CENTER);
 
+        // --- 時間顯示區 ---
+        timeLabel1 = new JLabel("矩陣1原始轉置執行時間: ");
+        timeLabel2 = new JLabel("矩陣2快速轉置執行時間: ");
+        JPanel timePanel = new JPanel(new GridLayout(2, 1));
+        timePanel.add(timeLabel1);
+        timePanel.add(timeLabel2);
+        add(timePanel, BorderLayout.SOUTH);
+
+        // --- 事件 ---
         generateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -61,6 +118,30 @@ public class SparseMatrixGUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 generateMatrix2();
+            }
+        });
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                operateMatrix(true);
+            }
+        });
+        subButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                operateMatrix(false);
+            }
+        });
+        transposeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                transposeSparseMatrix2();
+            }
+        });
+        transposeButton1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                transposeMatrix1();
             }
         });
 
@@ -146,6 +227,95 @@ public class SparseMatrixGUI extends JFrame {
             }
         }
         area.setText(sb.toString());
+    }
+
+    private void operateMatrix(boolean isAdd) {
+        messageLabel.setText("");
+        if (lastMatrix == null || lastMatrix2 == null) {
+            messageLabel.setText("請先產生兩個矩陣");
+            return;
+        }
+        int n1 = lastMatrix.length;
+        int n2 = lastMatrix2.length;
+        if (n1 != n2) {
+            messageLabel.setText("大小不一致, 無法相加或相減!");
+            return;
+        }
+        int[][] result = new int[n1][n1];
+        for (int i = 0; i < n1; i++) {
+            for (int j = 0; j < n1; j++) {
+                result[i][j] = isAdd ? lastMatrix[i][j] + lastMatrix2[i][j] : lastMatrix[i][j] - lastMatrix2[i][j];
+            }
+        }
+        showMatrix(resultTable, result);
+        showSparseMatrix(resultSparseTextArea, result);
+    }
+
+    // --- 快速轉置方法 ---
+    private void transposeMatrix1() {
+        messageLabel.setText("");
+        if (lastMatrix == null) {
+            messageLabel.setText("請先產生第一個矩陣");
+            return;
+        }
+        int n = lastMatrix.length;
+        int[][] trans = new int[n][n];
+        long start = System.nanoTime();
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                trans[j][i] = lastMatrix[i][j];
+        long end = System.nanoTime();
+        showMatrix(transposeTable1, trans);
+        showSparseMatrix(transposeSparseTextArea1, trans);
+        timeLabel1.setText("矩陣1原始轉置執行時間: " + (end - start) / 1_000_000.0 + " ms");
+    }
+
+    private void transposeSparseMatrix2() {
+        messageLabel.setText("");
+        if (lastMatrix2 == null) {
+            messageLabel.setText("請先產生第二個矩陣");
+            return;
+        }
+        int n = lastMatrix2.length;
+        long start = System.nanoTime();
+        int nonZero = 0;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (lastMatrix2[i][j] != 0) nonZero++;
+        int[][] triples = new int[nonZero][3];
+        int idx = 0;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (lastMatrix2[i][j] != 0) {
+                    triples[idx][0] = i;
+                    triples[idx][1] = j;
+                    triples[idx][2] = lastMatrix2[i][j];
+                    idx++;
+                }
+        int[] colCount = new int[n];
+        for (int i = 0; i < nonZero; i++) colCount[triples[i][1]]++;
+        int[] pos = new int[n];
+        pos[0] = 0;
+        for (int i = 1; i < n; i++) pos[i] = pos[i-1] + colCount[i-1];
+        int[][] transTriples = new int[nonZero][3];
+        for (int i = 0; i < nonZero; i++) {
+            int col = triples[i][1];
+            int p = pos[col]++;
+            transTriples[p][0] = triples[i][1];
+            transTriples[p][1] = triples[i][0];
+            transTriples[p][2] = triples[i][2];
+        }
+        int[][] transMatrix = new int[n][n];
+        for (int i = 0; i < nonZero; i++) {
+            int r = transTriples[i][0];
+            int c = transTriples[i][1];
+            int v = transTriples[i][2];
+            transMatrix[r][c] = v;
+        }
+        long end = System.nanoTime();
+        showMatrix(transposeTable, transMatrix);
+        showSparseMatrix(transposeSparseTextArea, transMatrix);
+        timeLabel2.setText("矩陣2快速轉置執行時間: " + (end - start) / 1_000_000.0 + " ms");
     }
 
     public static void main(String[] args) {
