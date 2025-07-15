@@ -11,11 +11,14 @@ public class SparseMatrixGUI extends JFrame {
     private JTextField sizeField;
     private JTextField densityField;
     private JButton generateButton;
-    private JButton showSparseButton;
+    private JButton generateButton2;
     private JTable matrixTable;
     private JScrollPane scrollPane;
     private JTextArea sparseTextArea;
     private int[][] lastMatrix;
+    private JTable matrixTable2;
+    private JTextArea sparseTextArea2;
+    private int[][] lastMatrix2;
 
     public SparseMatrixGUI() {
         setTitle("稀疏矩陣產生器");
@@ -29,39 +32,44 @@ public class SparseMatrixGUI extends JFrame {
         inputPanel.add(new JLabel("密集度 (0~1):"));
         densityField = new JTextField("0.2", 5);
         inputPanel.add(densityField);
-        generateButton = new JButton("生成矩陣");
+        generateButton = new JButton("產生矩陣1");
         inputPanel.add(generateButton);
-        showSparseButton = new JButton("顯示稀疏表示");
-        inputPanel.add(showSparseButton);
+        generateButton2 = new JButton("產生矩陣2");
+        inputPanel.add(generateButton2);
         add(inputPanel, BorderLayout.NORTH);
 
+        JPanel gridPanel = new JPanel(new GridLayout(2, 2));
         matrixTable = new JTable();
-        scrollPane = new JScrollPane(matrixTable);
-        add(scrollPane, BorderLayout.CENTER);
-
-        sparseTextArea = new JTextArea(8, 40);
+        gridPanel.add(new JScrollPane(matrixTable));
+        sparseTextArea = new JTextArea(8, 30);
         sparseTextArea.setEditable(false);
-        add(new JScrollPane(sparseTextArea), BorderLayout.SOUTH);
+        gridPanel.add(new JScrollPane(sparseTextArea));
+        matrixTable2 = new JTable();
+        gridPanel.add(new JScrollPane(matrixTable2));
+        sparseTextArea2 = new JTextArea(8, 30);
+        sparseTextArea2.setEditable(false);
+        gridPanel.add(new JScrollPane(sparseTextArea2));
+        add(gridPanel, BorderLayout.CENTER);
 
         generateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                generateMatrix();
+                generateMatrix1();
             }
         });
-        showSparseButton.addActionListener(new ActionListener() {
+        generateButton2.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showSparseMatrix();
+                generateMatrix2();
             }
         });
 
-        setSize(600, 400);
+        setSize(800, 600);
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
-    private void generateMatrix() {
+    private void generateMatrix1() {
         int n;
         double density;
         try {
@@ -74,8 +82,25 @@ public class SparseMatrixGUI extends JFrame {
         }
         int[][] matrix = createSparseMatrix(n, density);
         lastMatrix = matrix;
-        showMatrix(matrix);
-        sparseTextArea.setText("");
+        showMatrix(matrixTable, matrix);
+        showSparseMatrix(sparseTextArea, matrix);
+    }
+
+    private void generateMatrix2() {
+        int n;
+        double density;
+        try {
+            n = Integer.parseInt(sizeField.getText());
+            density = Double.parseDouble(densityField.getText());
+            if (n <= 0 || density < 0 || density > 1) throw new NumberFormatException();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "請輸入正確的數值 (n>0, 0<=密集度<=1)", "輸入錯誤", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        int[][] matrix = createSparseMatrix(n, density);
+        lastMatrix2 = matrix;
+        showMatrix(matrixTable2, matrix);
+        showSparseMatrix(sparseTextArea2, matrix);
     }
 
     private int[][] createSparseMatrix(int n, double density) {
@@ -97,7 +122,7 @@ public class SparseMatrixGUI extends JFrame {
         return matrix;
     }
 
-    private void showMatrix(int[][] matrix) {
+    private void showMatrix(JTable table, int[][] matrix) {
         int n = matrix.length;
         String[] columns = new String[n];
         for (int i = 0; i < n; i++) columns[i] = String.valueOf(i);
@@ -106,25 +131,21 @@ public class SparseMatrixGUI extends JFrame {
             for (int j = 0; j < n; j++)
                 data[i][j] = String.valueOf(matrix[i][j]);
         DefaultTableModel model = new DefaultTableModel(data, columns);
-        matrixTable.setModel(model);
+        table.setModel(model);
     }
 
-    private void showSparseMatrix() {
-        if (lastMatrix == null) {
-            sparseTextArea.setText("請先生成矩陣");
-            return;
-        }
+    private void showSparseMatrix(JTextArea area, int[][] matrix) {
         StringBuilder sb = new StringBuilder();
         sb.append("稀疏矩陣(row, col, value):\n");
-        int n = lastMatrix.length;
+        int n = matrix.length;
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                if (lastMatrix[i][j] != 0) {
-                    sb.append("(").append(i).append(", ").append(j).append(", ").append(lastMatrix[i][j]).append(")\n");
+                if (matrix[i][j] != 0) {
+                    sb.append("(").append(i).append(", ").append(j).append(", ").append(matrix[i][j]).append(")\n");
                 }
             }
         }
-        sparseTextArea.setText(sb.toString());
+        area.setText(sb.toString());
     }
 
     public static void main(String[] args) {
