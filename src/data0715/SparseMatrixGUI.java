@@ -277,7 +277,7 @@ public class SparseMatrixGUI extends JFrame {
             return;
         }
         int n = lastMatrix2.length;
-        long start = System.nanoTime();
+        // 先轉成三元組陣列（不計時）
         int nonZero = 0;
         for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++)
@@ -292,6 +292,8 @@ public class SparseMatrixGUI extends JFrame {
                     triples[idx][2] = lastMatrix2[i][j];
                     idx++;
                 }
+        // 快速轉置核心計時
+        long start = System.nanoTime();
         int[] colCount = new int[n];
         for (int i = 0; i < nonZero; i++) colCount[triples[i][1]]++;
         int[] pos = new int[n];
@@ -305,6 +307,8 @@ public class SparseMatrixGUI extends JFrame {
             transTriples[p][1] = triples[i][0];
             transTriples[p][2] = triples[i][2];
         }
+        long end = System.nanoTime();
+        // 轉回矩陣（不計時）
         int[][] transMatrix = new int[n][n];
         for (int i = 0; i < nonZero; i++) {
             int r = transTriples[i][0];
@@ -312,10 +316,9 @@ public class SparseMatrixGUI extends JFrame {
             int v = transTriples[i][2];
             transMatrix[r][c] = v;
         }
-        long end = System.nanoTime();
         showMatrix(transposeTable, transMatrix);
         showSparseMatrix(transposeSparseTextArea, transMatrix);
-        timeLabel2.setText("矩陣2快速轉置執行時間: " + (end - start) / 1_000_000.0 + " ms");
+        timeLabel2.setText("矩陣2快速轉置執行時間(僅核心): " + (end - start) / 1_000_000.0 + " ms");
     }
 
     public static void main(String[] args) {
