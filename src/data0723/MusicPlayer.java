@@ -4,14 +4,24 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.LinkedList;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+
+
+// javac --module-path /Users/Guest/Downloads/javafx-sdk-17.0.16/lib --add-modules javafx.controls,javafx.media,javafx.swing -cp . src/data0723/MusicPlayer.java
+// java --module-path /Users/Guest/Downloads/javafx-sdk-17.0.16/lib --add-modules javafx.controls,javafx.media,javafx.swing -cp src data0723.MusicPlayer
+
 
 public class MusicPlayer extends JFrame {
     private LinkedList<String> playlist = new LinkedList<>();
     private int currentIndex = -1;
     private JLabel currentSongLabel;
     private JTextArea playlistArea;
+    private MediaPlayer mediaPlayer; // 新增播放物件
 
     public MusicPlayer() {
+        new JFXPanel(); // 初始化 JavaFX
         setTitle("簡易音樂播放器");
         setSize(500, 400);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -46,15 +56,30 @@ public class MusicPlayer extends JFrame {
         nextButton.addActionListener(e -> playNext());
         prevButton.addActionListener(e -> playPrevious());
         showButton.addActionListener(e -> showPlaylist());
+        // 刪除自動彈出選檔功能
+    }
+
+    // 啟動時自動選取 mp3 並播放
+    private void showMp3ChooserAndPlay() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("MP3 Files", "mp3"));
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            String filePath = chooser.getSelectedFile().getAbsolutePath();
+            playMp3(filePath);
+            addSong(filePath);
+        }
     }
 
     // 新增歌曲（用檔案選擇器）
     private void addSongByChooser() {
         JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("MP3 Files", "mp3"));
         int result = chooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
-            String fileName = chooser.getSelectedFile().getName();
-            addSong(fileName);
+            String filePath = chooser.getSelectedFile().getAbsolutePath();
+            addSong(filePath);
+            playMp3(filePath); // 選到檔案後自動播放
         }
     }
 
@@ -98,6 +123,7 @@ public class MusicPlayer extends JFrame {
         if (currentIndex < playlist.size() - 1) {
             currentIndex++;
             updateCurrentSong();
+            playMp3(playlist.get(currentIndex)); // 自動播放下一首
         }
     }
 
@@ -107,6 +133,7 @@ public class MusicPlayer extends JFrame {
         if (currentIndex > 0) {
             currentIndex--;
             updateCurrentSong();
+            playMp3(playlist.get(currentIndex)); // 自動播放上一首
         }
     }
 
@@ -130,8 +157,23 @@ public class MusicPlayer extends JFrame {
         showPlaylist();
     }
 
+    // 播放 mp3
+    private void playMp3(String filePath) {
+        try {
+            if (mediaPlayer != null) {
+                mediaPlayer.stop();
+            }
+            String uri = new java.io.File(filePath).toURI().toString();
+            Media media = new Media(uri);
+            mediaPlayer = new MediaPlayer(media);
+            mediaPlayer.play();
+            currentSongLabel.setText("正在播放: " + filePath);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "無法播放: " + filePath);
+        }
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new MusicPlayer().setVisible(true));
     }
 }
-
