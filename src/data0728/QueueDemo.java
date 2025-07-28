@@ -5,7 +5,7 @@ import java.util.Queue;
 
 public class QueueDemo {
     public static void main(String[] args) {
-        Queue<String> queue = new LinkedList<String>();
+        Queue<String> queue = new LinkedList<String>(); // 使用 LinkedList 作為 Queue 的實現，鏈結串列（LinkedList）資料結構，屬於 java.util 套件。它的特點就是空間大小可變
         queue.offer("Karen"); // offer 是放入
         queue.offer("Brain");
         queue.offer("Emma");
