@@ -3,6 +3,7 @@ package data0805;
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 class GraphNode {
     String name;
@@ -23,12 +24,15 @@ class GraphEdge {
 }
 
 public class GraphApplicationGUI extends JFrame {
-    private java.util.List<GraphNode> nodes = new ArrayList<>();
-    private java.util.List<GraphEdge> edges = new ArrayList<>();
-    private JPanel graphPanel;
-    private JTextField nodeNameField, fromField, toField;
-    private JTextField nodeCountField, edgeCountField;
-    private Random rand = new Random();
+    private final java.util.List<GraphNode> nodes = new ArrayList<>();
+    private final java.util.List<GraphEdge> edges = new ArrayList<>();
+    private final JPanel graphPanel;
+    private final JTextField nodeNameField, fromField, toField;
+    private final JTextField nodeCountField, edgeCountField;
+    private final JTextField startNodeField;
+    private final java.util.List<GraphNode> traversalResult = new ArrayList<>();
+    private String traversalType = ""; // "DFS" or "BFS"
+    private final Random rand = new Random();
 
     public GraphApplicationGUI() {
         setTitle("Graph Application");
@@ -47,10 +51,24 @@ public class GraphApplicationGUI extends JFrame {
                 }
                 // Draw nodes
                 for (GraphNode node : nodes) {
-                    g.setColor(Color.RED);
+                    if (!traversalResult.isEmpty() && traversalResult.get(0) == node) {
+                        g.setColor(Color.RED); // 起點紅色
+                    } else if (traversalResult.contains(node)) {
+                        g.setColor(Color.GREEN); // 訪問過的綠色
+                    } else {
+                        g.setColor(Color.RED); // 未訪問紅色
+                    }
                     g.fillOval(node.x - 25, node.y - 25, 50, 50);
                     g.setColor(Color.BLACK);
-                    g.drawString(node.name, node.x - 7, node.y + 5);
+                    g.drawString(node.name, node.x - 13, node.y + 5);
+                }
+                // 顯示遍歷結果
+                if (!traversalResult.isEmpty()) {
+                    g.setColor(Color.BLACK);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(traversalType).append(": ");
+                    for (GraphNode n : traversalResult) sb.append(n.name).append(" ");
+                    g.drawString(sb.toString(), 20, 20);
                 }
             }
         };
@@ -67,6 +85,9 @@ public class GraphApplicationGUI extends JFrame {
         nodeCountField = new JTextField("6", 3);
         edgeCountField = new JTextField("4", 3);
         JButton autoGenBtn = new JButton("Auto Generate Graph");
+        startNodeField = new JTextField(5);
+        JButton dfsBtn = new JButton("DFS");
+        JButton bfsBtn = new JButton("BFS");
 
         controlPanel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -102,6 +123,15 @@ public class GraphApplicationGUI extends JFrame {
         controlPanel.add(edgeCountField, gbc);
         gbc.gridx++;
         controlPanel.add(autoGenBtn, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        controlPanel.add(new JLabel("Start Node:"), gbc);
+        gbc.gridx++;
+        controlPanel.add(startNodeField, gbc);
+        gbc.gridx++;
+        controlPanel.add(dfsBtn, gbc);
+        gbc.gridx++;
+        controlPanel.add(bfsBtn, gbc);
         add(controlPanel, BorderLayout.SOUTH);
 
         addNodeBtn.addActionListener(e -> {
@@ -152,13 +182,11 @@ public class GraphApplicationGUI extends JFrame {
             edges.clear();
             int w = graphPanel.getWidth();
             int h = graphPanel.getHeight();
-            Set<String> usedNames = new HashSet<>();
             for (int i = 0; i < n; i++) {
                 String name = "N" + i;
                 int x = 50 + rand.nextInt(Math.max(1, w - 100));
                 int y = 50 + rand.nextInt(Math.max(1, h - 100));
                 nodes.add(new GraphNode(name, x, y));
-                usedNames.add(name);
             }
             Set<String> edgeSet = new HashSet<>();
             for (int i = 0; i < m; i++) {
@@ -172,6 +200,41 @@ public class GraphApplicationGUI extends JFrame {
             }
             graphPanel.repaint();
         });
+        dfsBtn.addActionListener(e -> {
+            String start = startNodeField.getText().trim();
+            GraphNode startNode = getNodeByName(start);
+            traversalResult.clear();
+            traversalType = "DFS";
+            if (startNode != null) {
+                Set<GraphNode> visited = new LinkedHashSet<>();
+                dfs(startNode, visited);
+                traversalResult.addAll(visited);
+            }
+            graphPanel.repaint();
+        });
+        bfsBtn.addActionListener(e -> {
+            String start = startNodeField.getText().trim();
+            GraphNode startNode = getNodeByName(start);
+            traversalResult.clear();
+            traversalType = "BFS";
+            if (startNode != null) {
+                Set<GraphNode> visited = new LinkedHashSet<>();
+                Queue<GraphNode> queue = new LinkedList<>();
+                queue.add(startNode);
+                visited.add(startNode);
+                while (!queue.isEmpty()) {
+                    GraphNode curr = queue.poll();
+                    for (GraphNode neighbor : getNeighbors(curr)) {
+                        if (!visited.contains(neighbor)) {
+                            visited.add(neighbor);
+                            queue.add(neighbor);
+                        }
+                    }
+                }
+                traversalResult.addAll(visited);
+            }
+            graphPanel.repaint();
+        });
     }
 
     private GraphNode getNodeByName(String name) {
@@ -180,10 +243,24 @@ public class GraphApplicationGUI extends JFrame {
         }
         return null;
     }
+    private void dfs(GraphNode node, Set<GraphNode> visited) {
+        visited.add(node);
+        for (GraphNode neighbor : getNeighbors(node)) {
+            if (!visited.contains(neighbor)) {
+                dfs(neighbor, visited);
+            }
+        }
+    }
+    private List<GraphNode> getNeighbors(GraphNode node) {
+        List<GraphNode> neighbors = new ArrayList<>();
+        for (GraphEdge edge : edges) {
+            if (edge.from == node && !neighbors.contains(edge.to)) neighbors.add(edge.to);
+            if (edge.to == node && !neighbors.contains(edge.from)) neighbors.add(edge.from);
+        }
+        return neighbors;
+    }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new GraphApplicationGUI().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new GraphApplicationGUI().setVisible(true));
     }
 }
