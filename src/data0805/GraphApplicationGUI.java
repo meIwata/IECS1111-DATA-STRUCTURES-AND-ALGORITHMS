@@ -2,7 +2,6 @@ package data0805;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 
 class GraphNode {
@@ -28,6 +27,7 @@ public class GraphApplicationGUI extends JFrame {
     private java.util.List<GraphEdge> edges = new ArrayList<>();
     private JPanel graphPanel;
     private JTextField nodeNameField, fromField, toField;
+    private JTextField nodeCountField, edgeCountField;
     private Random rand = new Random();
 
     public GraphApplicationGUI() {
@@ -64,16 +64,44 @@ public class GraphApplicationGUI extends JFrame {
         fromField = new JTextField(3);
         toField = new JTextField(3);
         JButton addEdgeBtn = new JButton("Add Edge");
+        nodeCountField = new JTextField("6", 3);
+        edgeCountField = new JTextField("4", 3);
+        JButton autoGenBtn = new JButton("Auto Generate Graph");
 
-        controlPanel.add(new JLabel("Node Name:"));
-        controlPanel.add(nodeNameField);
-        controlPanel.add(addNodeBtn);
-        controlPanel.add(removeNodeBtn);
-        controlPanel.add(new JLabel("From:"));
-        controlPanel.add(fromField);
-        controlPanel.add(new JLabel("To:"));
-        controlPanel.add(toField);
-        controlPanel.add(addEdgeBtn);
+        controlPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 4, 2, 4);
+        gbc.gridy = 0;
+        gbc.gridx = 0;
+        controlPanel.add(new JLabel("Node Name:"), gbc);
+        gbc.gridx++;
+        controlPanel.add(nodeNameField, gbc);
+        gbc.gridx++;
+        controlPanel.add(addNodeBtn, gbc);
+        gbc.gridx++;
+        controlPanel.add(removeNodeBtn, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        controlPanel.add(new JLabel("From:"), gbc);
+        gbc.gridx++;
+        controlPanel.add(fromField, gbc);
+        gbc.gridx++;
+        controlPanel.add(new JLabel("To:"), gbc);
+        gbc.gridx++;
+        controlPanel.add(toField, gbc);
+        gbc.gridx++;
+        controlPanel.add(addEdgeBtn, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        controlPanel.add(new JLabel("Number of Nodes:"), gbc);
+        gbc.gridx++;
+        controlPanel.add(nodeCountField, gbc);
+        gbc.gridx++;
+        controlPanel.add(new JLabel("Number of Edges:"), gbc);
+        gbc.gridx++;
+        controlPanel.add(edgeCountField, gbc);
+        gbc.gridx++;
+        controlPanel.add(autoGenBtn, gbc);
         add(controlPanel, BorderLayout.SOUTH);
 
         addNodeBtn.addActionListener(e -> {
@@ -106,6 +134,44 @@ public class GraphApplicationGUI extends JFrame {
                 graphPanel.repaint();
             }
         });
+
+        autoGenBtn.addActionListener(e -> {
+            int n, m;
+            try {
+                n = Integer.parseInt(nodeCountField.getText().trim());
+                m = Integer.parseInt(edgeCountField.getText().trim());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Invalid node/edge count");
+                return;
+            }
+            if (n < 1 || m < 0) {
+                JOptionPane.showMessageDialog(this, "Node/edge count must be positive");
+                return;
+            }
+            nodes.clear();
+            edges.clear();
+            int w = graphPanel.getWidth();
+            int h = graphPanel.getHeight();
+            Set<String> usedNames = new HashSet<>();
+            for (int i = 0; i < n; i++) {
+                String name = "N" + i;
+                int x = 50 + rand.nextInt(Math.max(1, w - 100));
+                int y = 50 + rand.nextInt(Math.max(1, h - 100));
+                nodes.add(new GraphNode(name, x, y));
+                usedNames.add(name);
+            }
+            Set<String> edgeSet = new HashSet<>();
+            for (int i = 0; i < m; i++) {
+                int a = rand.nextInt(n);
+                int b = rand.nextInt(n);
+                if (a == b) { i--; continue; }
+                String key = a < b ? a + "," + b : b + "," + a;
+                if (edgeSet.contains(key)) { i--; continue; }
+                edgeSet.add(key);
+                edges.add(new GraphEdge(nodes.get(a), nodes.get(b)));
+            }
+            graphPanel.repaint();
+        });
     }
 
     private GraphNode getNodeByName(String name) {
@@ -121,4 +187,3 @@ public class GraphApplicationGUI extends JFrame {
         });
     }
 }
-
