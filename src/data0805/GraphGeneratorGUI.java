@@ -9,12 +9,15 @@ public class GraphGeneratorGUI extends JFrame {
     private JTextField verticesField;
     private JTextField edgesField;
     private JButton startButton;
+    private JButton mstButton;
     private GraphPanel graphPanel;
     private JTextArea edgeInfoArea;
 
     private final List<Vertex> vertices;
     private final List<Edge> edges;
+    private final List<Edge> mstEdges;
     private final Random random;
+    private boolean showMST = false;
 
     public GraphGeneratorGUI() {
         setTitle("Graph Generator");
@@ -24,6 +27,7 @@ public class GraphGeneratorGUI extends JFrame {
         random = new Random();
         vertices = new ArrayList<>();
         edges = new ArrayList<>();
+        mstEdges = new ArrayList<>();
 
         initializeComponents();
         layoutComponents();
@@ -38,6 +42,8 @@ public class GraphGeneratorGUI extends JFrame {
         verticesField = new JTextField("5", 10);
         edgesField = new JTextField("8", 10);
         startButton = new JButton("Start");
+        mstButton = new JButton("Find MST");
+        mstButton.setEnabled(false);
 
         // 圖形繪製面板
         graphPanel = new GraphPanel();
@@ -58,6 +64,7 @@ public class GraphGeneratorGUI extends JFrame {
         topPanel.add(new JLabel("Edges:"));
         topPanel.add(edgesField);
         topPanel.add(startButton);
+        topPanel.add(mstButton);
 
         // 底部滾動面板
         JScrollPane scrollPane = new JScrollPane(edgeInfoArea);
@@ -70,6 +77,7 @@ public class GraphGeneratorGUI extends JFrame {
 
     private void addEventListeners() {
         startButton.addActionListener(e -> generateGraph());
+        mstButton.addActionListener(e -> findMST());
     }
 
     private void generateGraph() {
@@ -91,12 +99,45 @@ public class GraphGeneratorGUI extends JFrame {
 
             createVertices(numVertices);
             createEdges(numEdges);
+            showMST = false;
+            mstEdges.clear();
+            mstButton.setEnabled(vertices.size() > 1 && !edges.isEmpty());
             updateEdgeInfo();
             graphPanel.repaint();
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "請輸入有效的數字！");
         }
+    }
+
+    private void findMST() {
+        if (vertices.isEmpty() || edges.isEmpty()) {
+            return;
+        }
+
+        mstEdges.clear();
+
+        // 使用 Kruskal 算法找到最小生成樹
+        List<Edge> sortedEdges = new ArrayList<>(edges);
+        sortedEdges.sort(Comparator.comparingInt(e -> e.cost));
+
+        UnionFind uf = new UnionFind(vertices.size());
+
+        for (Edge edge : sortedEdges) {
+            int v1Index = vertices.indexOf(edge.vertex1);
+            int v2Index = vertices.indexOf(edge.vertex2);
+
+            if (uf.union(v1Index, v2Index)) {
+                mstEdges.add(edge);
+                if (mstEdges.size() == vertices.size() - 1) {
+                    break;
+                }
+            }
+        }
+
+        showMST = true;
+        updateEdgeInfo();
+        graphPanel.repaint();
     }
 
     private void createVertices(int numVertices) {
@@ -141,6 +182,20 @@ public class GraphGeneratorGUI extends JFrame {
 
     private void updateEdgeInfo() {
         StringBuilder sb = new StringBuilder();
+
+        if (showMST && !mstEdges.isEmpty()) {
+            sb.append("=== MINIMUM SPANNING TREE ===\n");
+            int totalCost = 0;
+            for (Edge edge : mstEdges) {
+                sb.append("MST Edge: ").append(edge.vertex1.name)
+                  .append(" - ").append(edge.vertex2.name)
+                  .append(" with cost: ").append(edge.cost).append("\n");
+                totalCost += edge.cost;
+            }
+            sb.append("Total MST Cost: ").append(totalCost).append("\n\n");
+            sb.append("=== ALL EDGES ===\n");
+        }
+
         for (Edge edge : edges) {
             sb.append("Edge between ").append(edge.vertex1.name)
               .append(" and ").append(edge.vertex2.name)
@@ -173,6 +228,48 @@ public class GraphGeneratorGUI extends JFrame {
         }
     }
 
+    // Union-Find 數據結構用於 Kruskal 算法
+    private static class UnionFind {
+        private int[] parent;
+        private int[] rank;
+
+        public UnionFind(int size) {
+            parent = new int[size];
+            rank = new int[size];
+            for (int i = 0; i < size; i++) {
+                parent[i] = i;
+                rank[i] = 0;
+            }
+        }
+
+        public int find(int x) {
+            if (parent[x] != x) {
+                parent[x] = find(parent[x]);
+            }
+            return parent[x];
+        }
+
+        public boolean union(int x, int y) {
+            int rootX = find(x);
+            int rootY = find(y);
+
+            if (rootX == rootY) {
+                return false;
+            }
+
+            if (rank[rootX] < rank[rootY]) {
+                parent[rootX] = rootY;
+            } else if (rank[rootX] > rank[rootY]) {
+                parent[rootY] = rootX;
+            } else {
+                parent[rootY] = rootX;
+                rank[rootX]++;
+            }
+
+            return true;
+        }
+    }
+
     // 內部類：圖形繪製面板
     private class GraphPanel extends JPanel {
         @Override
@@ -181,33 +278,30 @@ public class GraphGeneratorGUI extends JFrame {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // 繪製邊
-            g2d.setColor(Color.BLACK);
-            g2d.setStroke(new BasicStroke(1.5f));
-            for (Edge edge : edges) {
-                g2d.drawLine(edge.vertex1.x, edge.vertex1.y, edge.vertex2.x, edge.vertex2.y);
-
-                // 繪製成本標籤
-                int midX = (edge.vertex1.x + edge.vertex2.x) / 2;
-                int midY = (edge.vertex1.y + edge.vertex2.y) / 2;
-
-                g2d.setColor(Color.RED);
-                g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-                String costStr = String.valueOf(edge.cost);
-                FontMetrics fm = g2d.getFontMetrics();
-                int textWidth = fm.stringWidth(costStr);
-                int textHeight = fm.getHeight();
-
-                // 繪製白色背景
-                g2d.setColor(Color.WHITE);
-                g2d.fillRect(midX - textWidth/2 - 2, midY - textHeight/2 - 2,
-                           textWidth + 4, textHeight);
-
-                // 繪製成本文字
-                g2d.setColor(Color.RED);
-                g2d.drawString(costStr, midX - textWidth/2, midY + textHeight/4);
-
+            // 繪製所有邊（如果不顯示MST）或非MST邊（如果顯示MST）
+            if (!showMST) {
+                // 繪製所有邊
                 g2d.setColor(Color.BLACK);
+                g2d.setStroke(new BasicStroke(1.5f));
+                for (Edge edge : edges) {
+                    drawEdge(g2d, edge, Color.BLACK, Color.RED);
+                }
+            } else {
+                // 先繪製非MST邊（灰色）
+                g2d.setColor(Color.LIGHT_GRAY);
+                g2d.setStroke(new BasicStroke(1.0f));
+                for (Edge edge : edges) {
+                    if (!mstEdges.contains(edge)) {
+                        drawEdge(g2d, edge, Color.LIGHT_GRAY, Color.GRAY);
+                    }
+                }
+
+                // 再繪製MST邊（紅色，較粗）
+                g2d.setColor(Color.RED);
+                g2d.setStroke(new BasicStroke(3.0f));
+                for (Edge edge : mstEdges) {
+                    drawEdge(g2d, edge, Color.RED, Color.BLUE);
+                }
             }
 
             // 繪製頂點
@@ -221,6 +315,31 @@ public class GraphGeneratorGUI extends JFrame {
                 g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
                 g2d.drawString(vertex.name, vertex.x + 12, vertex.y + 5);
             }
+        }
+
+        private void drawEdge(Graphics2D g2d, Edge edge, Color lineColor, Color textColor) {
+            // 繪製邊線
+            g2d.setColor(lineColor);
+            g2d.drawLine(edge.vertex1.x, edge.vertex1.y, edge.vertex2.x, edge.vertex2.y);
+
+            // 繪製成本標籤
+            int midX = (edge.vertex1.x + edge.vertex2.x) / 2;
+            int midY = (edge.vertex1.y + edge.vertex2.y) / 2;
+
+            g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+            String costStr = String.valueOf(edge.cost);
+            FontMetrics fm = g2d.getFontMetrics();
+            int textWidth = fm.stringWidth(costStr);
+            int textHeight = fm.getHeight();
+
+            // 繪製白色背景
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(midX - textWidth/2 - 2, midY - textHeight/2 - 2,
+                       textWidth + 4, textHeight);
+
+            // 繪製成本文字
+            g2d.setColor(textColor);
+            g2d.drawString(costStr, midX - textWidth/2, midY + textHeight/4);
         }
     }
 
