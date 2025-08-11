@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關節點演算法性能分析</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="css.css">
+</head>
+<body>
+<div class="container">
+    <h1>🚀 關節點演算法性能分析</h1>
+    <p class="subtitle">簡單版 vs Tarjan演算法 - 完整性能對比</p>
+
+    <div class="charts-grid">
+        <div class="chart-container">
+            <canvas id="timeChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="speedRatioChart"></canvas>
+        </div>
+
+        <div class="chart-container full-width">
+            <canvas id="scaleabilityChart"></canvas>
+        </div>
+
+        <div class="chart-container full-width">
+            <canvas id="edgeDensityChart"></canvas>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">2204×</div>
+            <div class="stat-label">最高加速比<br>(5000節點, 25000邊)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">O(V+E)</div>
+            <div class="stat-label">Tarjan演算法<br>時間複雜度</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">O(V²E)</div>
+            <div class="stat-label">簡單版<br>時間複雜度</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">100%</div>
+            <div class="stat-label">結果正確性<br>驗證通過</div>
+        </div>
+    </div>
+</div>
+
+<script src="js.js"></script>
+</body>
+</html>
