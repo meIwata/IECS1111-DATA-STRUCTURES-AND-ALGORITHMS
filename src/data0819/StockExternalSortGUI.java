@@ -20,6 +20,7 @@ public class StockExternalSortGUI extends JFrame {
             "股票代碼", "股票名稱", "交易日期", "成交量", "成交金額",
             "當日單筆最大成交量", "當日單筆最大成交金額", "當日單筆最小成交量", "當日單筆最小成交成交金額"
     };
+    private JLabel timerLabel;
 
     public StockExternalSortGUI() {
         setTitle("股票資料排序 (外部合併排序)");
@@ -31,12 +32,13 @@ public class StockExternalSortGUI extends JFrame {
         sortButton.setEnabled(false);
 
         sortFieldCombo = new JComboBox<>(new String[]{"成交量", "成交金額"});
-
+        timerLabel = new JLabel("排序耗時: 尚未執行");
         JPanel topPanel = new JPanel();
         topPanel.add(openButton);
         topPanel.add(new JLabel("排序依："));
         topPanel.add(sortFieldCombo);
         topPanel.add(sortButton);
+        topPanel.add(timerLabel); // 新增計時器顯示
 
         tableModel = new DefaultTableModel(headers, 0);
         table = new JTable(tableModel);
@@ -66,10 +68,15 @@ public class StockExternalSortGUI extends JFrame {
         if (selectedFile == null) return;
         int sortCol = (sortFieldCombo.getSelectedIndex() == 0) ? 3 : 4; // 成交量或成交金額
         sortButton.setEnabled(false); // 排序期間不可重複點擊
+        timerLabel.setText("排序中...");
         SwingWorker<List<String[]>, Void> worker = new SwingWorker<>() {
+            long startTime, endTime;
             @Override
             protected List<String[]> doInBackground() throws Exception {
-                return externalMergeSortTopN(selectedFile, sortCol, 15);
+                startTime = System.currentTimeMillis();
+                List<String[]> result = externalMergeSortTopN(selectedFile, sortCol, 15);
+                endTime = System.currentTimeMillis();
+                return result;
             }
             @Override
             protected void done() {
@@ -80,9 +87,11 @@ public class StockExternalSortGUI extends JFrame {
                         String[] display = Arrays.copyOf(row, headers.length);
                         tableModel.addRow(display);
                     }
+                    timerLabel.setText("排序耗時: " + (endTime - startTime) + " 毫秒");
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(StockExternalSortGUI.this, "排序發生錯誤: " + ex.getMessage());
                     ex.printStackTrace();
+                    timerLabel.setText("排序失敗");
                 } finally {
                     sortButton.setEnabled(true); // 排序完成後可再點擊
                 }
