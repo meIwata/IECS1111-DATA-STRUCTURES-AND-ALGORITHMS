@@ -65,17 +65,30 @@ public class StockExternalSortGUI extends JFrame {
     private void runExternalSort() {
         if (selectedFile == null) return;
         int sortCol = (sortFieldCombo.getSelectedIndex() == 0) ? 3 : 4; // 成交量或成交金額
-        try {
-            List<String[]> top15 = externalMergeSortTopN(selectedFile, sortCol, 15);
-            tableModel.setRowCount(0);
-            for (String[] row : top15) {
-                String[] display = Arrays.copyOf(row, headers.length);
-                tableModel.addRow(display);
+        sortButton.setEnabled(false); // 排序期間不可重複點擊
+        SwingWorker<List<String[]>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<String[]> doInBackground() throws Exception {
+                return externalMergeSortTopN(selectedFile, sortCol, 15);
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "排序發生錯誤: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+            @Override
+            protected void done() {
+                try {
+                    List<String[]> top15 = get();
+                    tableModel.setRowCount(0);
+                    for (String[] row : top15) {
+                        String[] display = Arrays.copyOf(row, headers.length);
+                        tableModel.addRow(display);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(StockExternalSortGUI.this, "排序發生錯誤: " + ex.getMessage());
+                    ex.printStackTrace();
+                } finally {
+                    sortButton.setEnabled(true); // 排序完成後可再點擊
+                }
+            }
+        };
+        worker.execute();
     }
 
     // 外部merge sort，只回傳前N筆
