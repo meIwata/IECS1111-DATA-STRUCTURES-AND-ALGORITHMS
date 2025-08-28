@@ -1,4 +1,4 @@
-package data0828;
+package data0828_01;
 
 import java.io.FileWriter;
 import java.io.IOException;
